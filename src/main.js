@@ -1,11 +1,7 @@
-import '@shoelace-style/shoelace/dist/themes/light.css'
-import { setBasePath } from '@shoelace-style/shoelace'
 import './style.css'
 import './payoff-graph.js'
 import './strategy-builder.js'
 import './chart-controls.js'
-
-setBasePath('/node_modules/@shoelace-style/shoelace/dist')
 
 document.querySelector('#app').innerHTML = `
   <div style="display:flex;gap:16px;padding:16px;width:100%;height:100vh;box-sizing:border-box;">
@@ -17,8 +13,8 @@ document.querySelector('#app').innerHTML = `
         <chart-controls></chart-controls>
       </div>
     </div>
-    <div class="panel" style="flex:1;">
-      <strategy-builder style="display:block;height:100%;"></strategy-builder>
+    <div class="panel" style="flex:1;display:flex;flex-direction:column;">
+      <strategy-builder style="display:block;flex:1;display:flex;flex-direction:column;"></strategy-builder>
     </div>
   </div>
 `

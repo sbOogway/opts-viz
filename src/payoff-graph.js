@@ -3,8 +3,6 @@ import Plotly from 'plotly.js-dist-min'
 import { longCallPayoff, longPutPayoff, shortCallPayoff, shortPutPayoff } from './options.js'
 import './payoff-graph.css'
 
-const traceStyle = { type: 'scatter', mode: 'lines+markers' }
-
 export class PayoffGraph extends LitElement {
   static properties = {
     width: { type: String },
@@ -45,9 +43,6 @@ export class PayoffGraph extends LitElement {
   updateChart() {
     if (!this.legs.length) return
 
-    const strikes = this.legs.map(l => l.strike)
-    const minStrike = Math.min(...strikes)
-    const maxStrike = Math.max(...strikes)
     const xMin = 0
     const xMax = this.underlyingPrice * 3
     const numPoints = 200
@@ -66,31 +61,44 @@ export class PayoffGraph extends LitElement {
       this.legs.reduce((total, leg) => total + payoffFn(price, leg), 0)
     )
 
-    const posX = [], posY = [], negX = [], negY = [], breakevens = []
+    const breakevens = []
 
-    for (let i = 0; i < xs.length; i++) {
-      if (ys[i] >= 0) { posX.push(xs[i]); posY.push(ys[i]) }
-      if (ys[i] <= 0) { negX.push(xs[i]); negY.push(ys[i]) }
-      if (i > 0 && Math.sign(ys[i]) !== Math.sign(ys[i - 1]) && ys[i] !== 0 && ys[i - 1] !== 0) {
+    for (let i = 1; i < xs.length; i++) {
+      if (Math.sign(ys[i]) !== Math.sign(ys[i - 1]) && ys[i] !== 0 && ys[i - 1] !== 0) {
         const x0 = xs[i - 1] - ys[i - 1] * (xs[i] - xs[i - 1]) / (ys[i] - ys[i - 1])
         breakevens.push(x0)
-        posX.push(x0); posY.push(0)
-        negX.push(x0); negY.push(0)
       }
     }
 
-    const makeTrace = (x, y, color) => ({
-      ...traceStyle, x, y,
-      line: { color, width: this.lineWidth },
-      marker: { color, size: 3 },
+    const segments = []
+    let cur = null
+    for (let i = 0; i < xs.length; i++) {
+      const sign = ys[i] >= 0 ? 1 : -1
+      if (!cur || cur.sign !== sign) {
+        cur = { sign, x: [xs[i]], y: [ys[i]] }
+        segments.push(cur)
+      } else {
+        cur.x.push(xs[i]); cur.y.push(ys[i])
+      }
+    }
+
+    breakevens.forEach((x, j) => {
+      segments[j].x.push(x); segments[j].y.push(0)
+      segments[j + 1].x.unshift(x); segments[j + 1].y.unshift(0)
     })
 
     const payoffAtPrice = this.legs.reduce((total, leg) => total + payoffFn(this.underlyingPrice, leg), 0)
 
-    const traceOpts = { showlegend: false }
+    const traceOpts = { showlegend: false, type: 'scatter', mode: 'lines+markers' }
     const data = []
-    if (posX.length) data.push({ ...makeTrace(posX, posY, this.posColor), ...traceOpts })
-    if (negX.length) data.push({ ...makeTrace(negX, negY, this.negColor), ...traceOpts })
+    segments.forEach(seg => {
+      data.push({
+        ...traceOpts,
+        x: seg.x, y: seg.y,
+        line: { color: seg.sign === 1 ? this.posColor : this.negColor, width: this.lineWidth },
+        marker: { color: seg.sign === 1 ? this.posColor : this.negColor, size: 3 },
+      })
+    })
 
     data.push({
       ...traceOpts,
@@ -114,12 +122,25 @@ export class PayoffGraph extends LitElement {
       })
     })
 
+    data.push({
+      x: this.legs.map(l => l.strike),
+      y: this.legs.map(() => 0),
+      text: this.legs.map((_, i) => String.fromCharCode(65 + i)),
+      textposition: 'top center',
+      type: 'scatter',
+      mode: 'markers+text',
+      name: 'Strikes',
+      marker: { color: '#000', size: 7, symbol: 'diamond' },
+      textfont: { size: 16, color: '#000' },
+      showlegend: false,
+    })
+
     const axisTitle = text => ({ text, standoff: 10 })
     const maxAbsY = Math.max(...ys.map(Math.abs))
 
     Plotly.react(this.querySelector('div'), data, {
       xaxis: { title: axisTitle('Underlying Price'), range: [0, this.underlyingPrice * 3] },
-      yaxis: { title: axisTitle('Profit'), range: [-maxAbsY, maxAbsY] },
+      yaxis: { title: axisTitle('Profit'), range: [-maxAbsY * 1.15, maxAbsY * 1.15] },
       showlegend: true,
       margin: { t: 60, r: 20, b: 60, l: 70 },
       paper_bgcolor: 'transparent',

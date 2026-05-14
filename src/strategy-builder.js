@@ -1,6 +1,30 @@
 import { LitElement, html } from 'lit'
+import './leg-input.js'
 
 const inputStyle = 'padding:6px;font-size:14px;border:1px solid #ccc;border-radius:4px;'
+
+const presetStrats = {
+  Butterfly: (u) => [
+    { type: 'call', direction: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5 },
+    { type: 'call', direction: 'short', strike: +u.toFixed(5), premium: 1.0 },
+    { type: 'call', direction: 'short', strike: +u.toFixed(5), premium: 1.0 },
+    { type: 'call', direction: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.3 },
+  ],
+  'Iron Condor': (u) => [
+    { type: 'put', direction: 'long', strike: +(u * 2 / 3).toFixed(5), premium: 0.03 },
+    { type: 'put', direction: 'short', strike: +(u * 5 / 6).toFixed(5), premium: 0.05 },
+    { type: 'call', direction: 'short', strike: +(u * 7 / 6).toFixed(5), premium: 0.05 },
+    { type: 'call', direction: 'long', strike: +(u * 4 / 3).toFixed(5), premium: 0.03 },
+  ],
+  Straddle: (u) => [
+    { type: 'call', direction: 'long', strike: +u.toFixed(5), premium: 1.0 },
+    { type: 'put', direction: 'long', strike: +u.toFixed(5), premium: 1.0 },
+  ],
+  Strangle: (u) => [
+    { type: 'put', direction: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5 },
+    { type: 'call', direction: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.5 },
+  ],
+}
 
 export class StrategyBuilder extends LitElement {
   static properties = {
@@ -15,7 +39,7 @@ export class StrategyBuilder extends LitElement {
     super()
     this.legs = []
     this.step = '0.00001'
-    const defaultPrice = 1
+    const defaultPrice = 1.5
     this.underlyingPrice = defaultPrice
     this.defaultStrike = defaultPrice
     this.defaultPremium = defaultPrice
@@ -25,19 +49,19 @@ export class StrategyBuilder extends LitElement {
     return this
   }
 
+  firstUpdated() {
+    this.loadStrategy('Iron Condor')
+  }
+
   syncDefaults() {
     this.defaultStrike = this.underlyingPrice
     this.defaultPremium = this.underlyingPrice
   }
 
   addLeg() {
-    const type = this.querySelector('#leg-type').value
-    const direction = this.querySelector('#leg-direction').value
-    const strike = Number(this.querySelector('#leg-strike').value)
-    const premium = Number(this.querySelector('#leg-premium').value)
-
+    const el = this.querySelector('#new-leg-input')
+    const { direction, type, strike, premium } = el
     if (!strike || !premium) return
-
     this.legs = [...this.legs, { type, direction, strike, premium }]
     this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
   }
@@ -47,9 +71,34 @@ export class StrategyBuilder extends LitElement {
     this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
   }
 
+  updateLeg(index, field, value) {
+    this.legs = this.legs.map((leg, i) =>
+      i === index ? { ...leg, [field]: value } : leg
+    )
+    this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
+  }
+
+  replaceLeg(index, data) {
+    this.legs = this.legs.map((leg, i) => i === index ? { ...data } : leg)
+    this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
+  }
+
+  loadStrategy(name) {
+    const fn = presetStrats[name]
+    if (!fn) return
+    this.legs = fn(this.underlyingPrice)
+    this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
+  }
+
   render() {
     return html`
-      <div class="leg-form" style="border:1px solid var(--adecbe);border-radius:6px;padding:10px;margin-bottom:12px;">
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;flex-shrink:0;">
+        ${Object.keys(presetStrats).map(name => html`
+          <button class="btn-add" style="white-space:nowrap;flex-shrink:0;" @click=${() => this.loadStrategy(name)}>${name}</button>
+        `)}
+      </div>
+
+      <div class="leg-form" style="border:1px solid var(--adecbe);border-radius:6px;padding:10px;margin-bottom:12px;flex-shrink:0;">
         <div style="margin-bottom:10px;">
           <label for="underlying-price" style="font-size:14px;margin-right:8px;">Underlying Price</label>
           <input id="underlying-price" type="number" step=${this.step} .value=${this.underlyingPrice}
@@ -58,26 +107,22 @@ export class StrategyBuilder extends LitElement {
         </div>
 
         <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
-          <select id="leg-type" style="${inputStyle}">
-            <option value="call" selected>Call</option>
-            <option value="put">Put</option>
-          </select>
-          <select id="leg-direction" style="${inputStyle}">
-            <option value="long" selected>Long</option>
-            <option value="short">Short</option>
-          </select>
-          <input id="leg-strike" type="number" step=${this.step} .value=${this.defaultStrike} style="${inputStyle}width:110px;">
-          <input id="leg-premium" type="number" step=${this.step} .value=${this.defaultPremium} style="${inputStyle}width:110px;">
+          <leg-input id="new-leg-input" .direction=${'long'} .type=${'call'} .strike=${this.defaultStrike} .premium=${this.defaultPremium} .step=${this.step}></leg-input>
           <button class="btn-add" @click=${this.addLeg}>Add Leg</button>
         </div>
       </div>
 
-      <div>
+      <div style="flex:1;overflow-y:auto;">
         ${this.legs.length === 0 ? html`<span style="color:#9ca3af;">No legs added</span>` : ''}
         ${this.legs.map((leg, i) => html`
-          <div style="border:1px solid var(--adecbe);border-radius:6px;padding:6px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;">
-            <span><b>${String.fromCharCode(65 + i)}</b> &mdash; ${leg.direction} ${leg.type} &mdash; Strike: ${leg.strike}, Premium: ${leg.premium}</span>
-            <button class="btn-remove" @click=${() => this.removeLeg(i)}>X</button>
+          <div style="border:1px solid var(--adecbe);border-radius:6px;padding:8px 10px;margin-bottom:6px;">
+            <div style="display:flex;gap:3px;align-items:center;">
+              <b>${String.fromCharCode(65 + i)}</b>
+              <leg-input .direction=${leg.direction} .type=${leg.type} .strike=${leg.strike} .premium=${leg.premium} .step=${this.step}
+                @leg-input-change=${e => this.replaceLeg(i, e.detail)}>
+              </leg-input>
+              <button class="btn-remove" @click=${() => this.removeLeg(i)}>X</button>
+            </div>
           </div>
         `)}
       </div>

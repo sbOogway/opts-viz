@@ -12,7 +12,6 @@
     "vite": "^8.0.12"
   },
   "dependencies": {
-    "@shoelace-style/shoelace": "^2.20.1",
     "@tailwindcss/vite": "^4.3.0",
     "lit": "^3.3.3",
     "plotly.js-dist-min": "^3.5.1",
