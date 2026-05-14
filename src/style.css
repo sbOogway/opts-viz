@@ -275,6 +275,26 @@ code {
   }
 }
 
+.btn-add {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #adecbe;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-remove {
+  padding: 2px 8px;
+  font-size: 12px;
+  background: #adecbe;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 .ticks {
   position: relative;
   width: 100%;
