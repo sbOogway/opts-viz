@@ -3,12 +3,14 @@ import { setBasePath } from '@shoelace-style/shoelace'
 import './style.css'
 import './payoff-graph.js'
 import './strategy-builder.js'
+import './chart-controls.js'
 
 setBasePath('/node_modules/@shoelace-style/shoelace/dist')
 
 document.querySelector('#app').innerHTML = `
   <strategy-builder></strategy-builder>
   <payoff-graph></payoff-graph>
+  <chart-controls></chart-controls>
 `
 
 const builder = document.querySelector('strategy-builder')
