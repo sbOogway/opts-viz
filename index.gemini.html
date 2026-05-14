@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Options Visualizer - Dynamic Range</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --primary: #2563eb;
+            --spot: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); margin: 20px; color: #334155; }
+        .container { max-width: 1100px; margin: auto; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background: #fffbeb;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #fde68a;
+            margin-bottom: 25px;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-weight: 700; font-size: 0.9rem; color: #92400e; }
+        
+        input[type="range"] { width: 100%; cursor: pointer; }
+        input[type="number"], select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+
+        .pnl-badge {
+            grid-column: span 2;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 900;
+            padding: 10px;
+            border-top: 1px solid #fde68a;
+        }
+
+        .actions { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        button { padding: 10px 15px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-add { background: var(--primary); color: white; }
+        .btn-clear { background: var(--danger); color: white; }
+        .btn-preset { background: #64748b; color: white; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { text-align: left; padding: 12px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+
+        .chart-wrapper { height: 450px; background: white; border-radius: 8px; padding: 10px; }
+        .pos { color: var(--success); }
+        .neg { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 style="text-align:center; margin-top:0;">Strategy Analyzer</h1>
+
+    <div class="dashboard">
+        <!-- Controllo Prezzo Sottostante -->
+        <div class="control-group">
+            <label>Prezzo Sottostante (Spot): $<span id="spot-val">100</span></label>
+            <input type="range" id="spot-slider" min="1" max="500" value="100" oninput="updateSpot(this.value)">
+            <input type="number" id="spot-input" value="100" oninput="updateSpot(this.value)">
+        </div>
+
+        <!-- Controllo Range Grafico (Asse X) -->
+        <div class="control-group">
+            <label>Range Grafico (X-Axis): <span id="range-val">2</span>x Spot</label>
+            <input type="range" id="range-slider" min="0.1" max="5" step="0.1" value="2" oninput="updateRange(this.value)">
+            <div style="font-size: 0.8rem; color: #666;">Visualizza da 0 a <span id="max-x-label">200</span></div>
+        </div>
+
+        <div id="pnl-summary" class="pnl-badge">P&L: $0.00</div>
+    </div>
+
+    <div class="actions">
+        <button class="btn-add" onclick="addLeg()">+ Aggiungi Leg</button>
+        <button class="btn-preset" onclick="applyTemplate('ironCondor')">Template Iron Condor</button>
+        <button class="btn-preset" onclick="applyTemplate('butterfly')">Template Butterfly</button>
+        <button class="btn-clear" onclick="clearAll()">Reset</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tipo</th>
+                <th>Azione</th>
+                <th>Strike ($)</th>
+                <th>Premio ($)</th>
+                <th>Quantità</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="legs-table"></tbody>
+    </table>
+
+    <div class="chart-wrapper">
+        <canvas id="mainChart"></canvas>
+    </div>
+</div>
+
+<script>
+    let legs = [];
+    let chart;
+    let currentSpot = 100;
+    let rangeMultiplier = 2;
+
+    window.onload = () => {
+        setupChart();
+        applyTemplate('ironCondor');
+    };
+
+    function setupChart() {
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'P&L a Scadenza',
+                        data: [],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0, // Linee dritte per payoff opzioni
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Spot Attuale',
+                        data: [],
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        pointRadius: 4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', min: 0, title: { display: true, text: 'Prezzo Asset ($)' } },
+                    y: { title: { display: true, text: 'Profitto / Perdita ($)' }, grid: { color: c => c.tick.value === 0 ? '#000' : '#e2e8f0' } }
+                },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    function updateSpot(val) {
+        currentSpot = parseFloat(val) || 0;
+        document.getElementById('spot-val').innerText = currentSpot;
+        document.getElementById('spot-slider').value = currentSpot;
+        document.getElementById('spot-input').value = currentSpot;
+        refresh();
+    }
+
+    function updateRange(val) {
+        rangeMultiplier = parseFloat(val);
+        document.getElementById('range-val').innerText = rangeMultiplier;
+        refresh();
+    }
+
+    function addLeg(type='Call', side='Buy', strike=100, premium=2, qty=1) {
+        const id = Math.random().toString(36).substr(2, 9);
+        legs.push({ id, type, side, strike: parseFloat(strike), premium: parseFloat(premium), qty: parseInt(qty) });
+        renderTable();
+        refresh();
+    }
+
+    function updateLeg(id, field, value) {
+        const leg = legs.find(l => l.id === id);
+        leg[field] = (field === 'type' || field === 'side') ? value : parseFloat(value) || 0;
+        refresh();
+    }
+
+    function removeLeg(id) {
+        legs = legs.filter(l => l.id !== id);
+        renderTable();
+        refresh();
+    }
+
+    function clearAll() { legs = []; renderTable(); refresh(); }
+
+    function renderTable() {
+        const container = document.getElementById('legs-table');
+        container.innerHTML = legs.map(leg => `
+            <tr>
+                <td><select onchange="updateLeg('${leg.id}', 'type', this.value)">
+                    <option value="Call" ${leg.type==='Call'?'selected':''}>Call</option>
+                    <option value="Put" ${leg.type==='Put'?'selected':''}>Put</option>
+                </select></td>
+                <td><select onchange="updateLeg('${leg.id}', 'side', this.value)">
+                    <option value="Buy" ${leg.side==='Buy'?'selected':''}>Buy (Long)</option>
+                    <option value="Sell" ${leg.side==='Sell'?'selected':''}>Sell (Short)</option>
+                </select></td>
+                <td><input type="number" value="${leg.strike}" oninput="updateLeg('${leg.id}', 'strike', this.value)"></td>
+                <td><input type="number" step="0.1" value="${leg.premium}" oninput="updateLeg('${leg.id}', 'premium', this.value)"></td>
+                <td><input type="number" value="${leg.qty}" oninput="updateLeg('${leg.id}', 'qty', this.value)"></td>
+                <td><button class="btn-clear" style="padding: 5px 10px" onclick="removeLeg('${leg.id}')">X</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function calculatePL(price) {
+        return legs.reduce((total, leg) => {
+            let payoff = leg.type === 'Call' ? Math.max(price - leg.strike, 0) : Math.max(leg.strike - price, 0);
+            let direction = leg.side === 'Buy' ? 1 : -1;
+            return total + ((payoff - leg.premium) * direction * leg.qty);
+        }, 0);
+    }
+
+    function refresh() {
+        const maxX = currentSpot * rangeMultiplier;
+        document.getElementById('max-x-label').innerText = maxX.toFixed(0);
+
+        // Generazione punti Payoff
+        const points = [];
+        const step = maxX / 100;
+        for (let x = 0; x <= maxX; x += step) {
+            points.push({ x: x, y: calculatePL(x) });
+        }
+
+        // Dati linea Spot
+        const currentPL = calculatePL(currentSpot);
+        const yMin = Math.min(...points.map(p => p.y), 0);
+        const yMax = Math.max(...points.map(p => p.y), 0);
+        
+        chart.data.datasets[0].data = points;
+        chart.data.datasets[1].data = [{x: currentSpot, y: yMin}, {x: currentSpot, y: yMax}];
+        
+        chart.options.scales.x.max = maxX;
+        chart.update('none');
+
+        const pnlEl = document.getElementById('pnl-summary');
+        pnlEl.innerText = `P&L attuale: $${currentPL.toFixed(2)}`;
+        pnlEl.className = `pnl-badge ${currentPL >= 0 ? 'pos' : 'neg'}`;
+    }
+
+    function applyTemplate(type) {
+        legs = [];
+        if (type === 'ironCondor') {
+            addLeg('Put', 'Buy', 80, 1.5); addLeg('Put', 'Sell', 90, 4);
+            addLeg('Call', 'Sell', 110, 4); addLeg('Call', 'Buy', 120, 1.5);
+        } else if (type === 'butterfly') {
+            addLeg('Call', 'Buy', 90, 5); addLeg('Call', 'Sell', 100, 2.5, 2); addLeg('Call', 'Buy', 110, 1);
+        }
+        renderTable();
+        refresh();
+    }
+</script>
+
+</body>
+</html>
