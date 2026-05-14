@@ -8,7 +8,7 @@ export class ChartControls extends LitElement {
   render() {
     return html`
       <div style="font-size:12px;color:#000;">
-        Zoom: scroll wheel &middot; Pan: <kbd>Alt</kbd> + click drag &middot; Box zoom: click drag &middot; Reset: double-click
+        Interactive options strategy visualizer. Zoom: scroll wheel &middot; Move around: Shift + click drag 
       </div>
     `
   }

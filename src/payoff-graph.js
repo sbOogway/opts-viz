@@ -138,7 +138,10 @@ export class PayoffGraph extends LitElement {
     const axisTitle = text => ({ text, standoff: 10 })
     const maxAbsY = Math.max(...ys.map(Math.abs))
 
-    Plotly.react(this.querySelector('div'), data, {
+    const el = this.querySelector('div')
+    el.style.overflow = 'hidden'
+    Plotly.react(el, data, {
+      autosize: true,
       xaxis: { title: axisTitle('Underlying Price'), range: [0, this.underlyingPrice * 3] },
       yaxis: { title: axisTitle('Profit'), range: [-maxAbsY * 1.15, maxAbsY * 1.15] },
       showlegend: true,
@@ -162,7 +165,7 @@ export class PayoffGraph extends LitElement {
           line: { color: '#000', width: 1, dash: 'dot' },
         })),
       ],
-    }, { scrollZoom: true })
+    }, { scrollZoom: true, responsive: true })
   }
 
   render() {

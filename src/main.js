@@ -4,17 +4,17 @@ import './strategy-builder.js'
 import './chart-controls.js'
 
 document.querySelector('#app').innerHTML = `
-  <div style="display:flex;gap:16px;padding:16px;width:100%;height:100vh;box-sizing:border-box;">
-    <div style="flex:4;display:flex;flex-direction:column;gap:16px;">
-      <div class="panel" style="flex:1;display:flex;flex-direction:column;">
-        <payoff-graph style="flex:1;"></payoff-graph>
+  <div style="display:flex;gap:16px;padding:16px;width:100%;height:100vh;box-sizing:border-box;overflow:hidden;">
+    <div style="flex:4;display:flex;flex-direction:column;gap:16px;min-width:0;">
+      <div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+        <payoff-graph style="flex:1;min-height:0;"></payoff-graph>
       </div>
-      <div class="panel">
+      <div class="panel" style="flex-shrink:0;">
         <chart-controls></chart-controls>
       </div>
     </div>
-    <div class="panel" style="flex:1;display:flex;flex-direction:column;">
-      <strategy-builder style="display:block;flex:1;display:flex;flex-direction:column;"></strategy-builder>
+    <div class="panel" style="flex:1.25;display:flex;flex-direction:column;min-width:0;min-height:0;">
+      <strategy-builder style="display:flex;flex-direction:column;flex:1;min-height:0;"></strategy-builder>
     </div>
   </div>
 `

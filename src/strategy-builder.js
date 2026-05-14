@@ -38,7 +38,7 @@ export class StrategyBuilder extends LitElement {
   constructor() {
     super()
     this.legs = []
-    this.step = '0.00001'
+    this.step = '0.001'
     const defaultPrice = 1.5
     this.underlyingPrice = defaultPrice
     this.defaultStrike = defaultPrice
@@ -99,11 +99,19 @@ export class StrategyBuilder extends LitElement {
       </div>
 
       <div class="leg-form" style="border:1px solid var(--adecbe);border-radius:6px;padding:10px;margin-bottom:12px;flex-shrink:0;">
-        <div style="margin-bottom:10px;">
-          <label for="underlying-price" style="font-size:14px;margin-right:8px;">Underlying Price</label>
-          <input id="underlying-price" type="number" step=${this.step} .value=${this.underlyingPrice}
-            @input=${e => { this.underlyingPrice = Number(e.target.value); this.syncDefaults(); this.dispatchEvent(new CustomEvent('underlying-change', { detail: this.underlyingPrice })) }}
-            style="${inputStyle}width:150px;">
+        <div style="margin-bottom:10px;display:flex;gap:12px;align-items:end;flex-wrap:wrap;">
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <label class="label">Underlying Price</label>
+            <input id="underlying-price" type="number" step=${this.step} .value=${this.underlyingPrice}
+              @input=${e => { this.underlyingPrice = Number(e.target.value); this.syncDefaults(); this.dispatchEvent(new CustomEvent('underlying-change', { detail: this.underlyingPrice })) }}
+              style="padding:6px;font-size:14px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;width:100px;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <label class="label">Step</label>
+            <input id="step-size" type="number" step="0.001" .value=${this.step}
+              @input=${e => { this.step = String(Number(e.target.value)); }}
+              style="padding:6px;font-size:14px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;width:80px;">
+          </div>
         </div>
 
         <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
@@ -116,12 +124,18 @@ export class StrategyBuilder extends LitElement {
         ${this.legs.length === 0 ? html`<span style="color:#9ca3af;">No legs added</span>` : ''}
         ${this.legs.map((leg, i) => html`
           <div style="border:1px solid var(--adecbe);border-radius:6px;padding:8px 10px;margin-bottom:6px;">
-            <div style="display:flex;gap:3px;align-items:center;">
-              <b>${String.fromCharCode(65 + i)}</b>
+            <div style="display:flex;gap:3px;align-items:stretch;min-width:0;">
+              <div style="display:flex;flex-direction:column;">
+                <div style="height:9px;flex-shrink:0;"></div>
+                <span style="display:flex;align-items:center;justify-content:center;min-width:24px;border:1px solid var(--adecbe);border-radius:4px;font-weight:bold;font-size:14px;flex:1;">${String.fromCharCode(65 + i)}</span>
+              </div>
               <leg-input .direction=${leg.direction} .type=${leg.type} .strike=${leg.strike} .premium=${leg.premium} .step=${this.step}
                 @leg-input-change=${e => this.replaceLeg(i, e.detail)}>
               </leg-input>
-              <button class="btn-remove" @click=${() => this.removeLeg(i)}>X</button>
+              <div style="display:flex;flex-direction:column;">
+                <div style="height:9px;flex-shrink:0;"></div>
+                <button class="btn-remove" style="flex:1;" @click=${() => this.removeLeg(i)}>X</button>
+              </div>
             </div>
           </div>
         `)}
