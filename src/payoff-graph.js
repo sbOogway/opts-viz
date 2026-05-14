@@ -18,7 +18,7 @@ export class PayoffGraph extends LitElement {
   constructor() {
     super()
     this.width = '100%'
-    this.height = '500px'
+    this.height = '100%'
     this.fontColor = 'black'
     this.legs = []
     this.underlyingPrice = 1
@@ -49,7 +49,7 @@ export class PayoffGraph extends LitElement {
     const minStrike = Math.min(...strikes)
     const maxStrike = Math.max(...strikes)
     const xMin = 0
-    const xMax = this.underlyingPrice * 10
+    const xMax = this.underlyingPrice * 3
     const numPoints = 200
     const xs = Array.from({ length: numPoints }, (_, i) =>
       xMin + (xMax - xMin) * i / (numPoints - 1)
@@ -118,7 +118,7 @@ export class PayoffGraph extends LitElement {
     const maxAbsY = Math.max(...ys.map(Math.abs))
 
     Plotly.react(this.querySelector('div'), data, {
-      xaxis: { title: axisTitle('Underlying Price'), range: [0, this.underlyingPrice * 5] },
+      xaxis: { title: axisTitle('Underlying Price'), range: [0, this.underlyingPrice * 3] },
       yaxis: { title: axisTitle('Profit'), range: [-maxAbsY, maxAbsY] },
       showlegend: true,
       margin: { t: 60, r: 20, b: 60, l: 70 },

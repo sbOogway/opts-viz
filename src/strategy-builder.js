@@ -49,31 +49,33 @@ export class StrategyBuilder extends LitElement {
 
   render() {
     return html`
-      <div style="margin-bottom:12px;">
-        <label for="underlying-price" style="font-size:14px;margin-right:8px;">Underlying Price</label>
-        <input id="underlying-price" type="number" step=${this.step} .value=${this.underlyingPrice}
-          @input=${e => { this.underlyingPrice = Number(e.target.value); this.syncDefaults(); this.dispatchEvent(new CustomEvent('underlying-change', { detail: this.underlyingPrice })) }}
-          style="${inputStyle}width:150px;">
+      <div class="leg-form" style="border:1px solid var(--adecbe);border-radius:6px;padding:10px;margin-bottom:12px;">
+        <div style="margin-bottom:10px;">
+          <label for="underlying-price" style="font-size:14px;margin-right:8px;">Underlying Price</label>
+          <input id="underlying-price" type="number" step=${this.step} .value=${this.underlyingPrice}
+            @input=${e => { this.underlyingPrice = Number(e.target.value); this.syncDefaults(); this.dispatchEvent(new CustomEvent('underlying-change', { detail: this.underlyingPrice })) }}
+            style="${inputStyle}width:150px;">
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+          <select id="leg-type" style="${inputStyle}">
+            <option value="call" selected>Call</option>
+            <option value="put">Put</option>
+          </select>
+          <select id="leg-direction" style="${inputStyle}">
+            <option value="long" selected>Long</option>
+            <option value="short">Short</option>
+          </select>
+          <input id="leg-strike" type="number" step=${this.step} .value=${this.defaultStrike} style="${inputStyle}width:110px;">
+          <input id="leg-premium" type="number" step=${this.step} .value=${this.defaultPremium} style="${inputStyle}width:110px;">
+          <button class="btn-add" @click=${this.addLeg}>Add Leg</button>
+        </div>
       </div>
 
-      <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
-        <select id="leg-type" style="${inputStyle}">
-          <option value="call" selected>Call</option>
-          <option value="put">Put</option>
-        </select>
-        <select id="leg-direction" style="${inputStyle}">
-          <option value="long" selected>Long</option>
-          <option value="short">Short</option>
-        </select>
-        <input id="leg-strike" type="number" step=${this.step} .value=${this.defaultStrike} style="${inputStyle}width:110px;">
-        <input id="leg-premium" type="number" step=${this.step} .value=${this.defaultPremium} style="${inputStyle}width:110px;">
-        <button class="btn-add" @click=${this.addLeg}>Add Leg</button>
-      </div>
-
-      <div style="margin-top:12px;">
+      <div>
         ${this.legs.length === 0 ? html`<span style="color:#9ca3af;">No legs added</span>` : ''}
         ${this.legs.map((leg, i) => html`
-          <div style="display:flex;gap:8px;align-items:center;padding:4px 0;">
+          <div style="border:1px solid var(--adecbe);border-radius:6px;padding:6px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;">
             <span><b>${String.fromCharCode(65 + i)}</b> &mdash; ${leg.direction} ${leg.type} &mdash; Strike: ${leg.strike}, Premium: ${leg.premium}</span>
             <button class="btn-remove" @click=${() => this.removeLeg(i)}>X</button>
           </div>

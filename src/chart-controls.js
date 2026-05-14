@@ -7,7 +7,7 @@ export class ChartControls extends LitElement {
 
   render() {
     return html`
-      <div style="font-size:12px;color:#9ca3af;margin-top:4px;">
+      <div style="font-size:12px;color:#000;">
         Zoom: scroll wheel &middot; Pan: <kbd>Alt</kbd> + click drag &middot; Box zoom: click drag &middot; Reset: double-click
       </div>
     `
