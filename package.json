@@ -1,0 +1,21 @@
+{
+  "name": "opts-viz",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.0.12"
+  },
+  "dependencies": {
+    "@shoelace-style/shoelace": "^2.20.1",
+    "@tailwindcss/vite": "^4.3.0",
+    "lit": "^3.3.3",
+    "plotly.js-dist-min": "^3.5.1",
+    "tailwindcss": "^4.3.0"
+  }
+}
