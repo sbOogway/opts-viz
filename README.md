@@ -1,5 +1,7 @@
 # opts-viz
 
+![screenshot](src/assets/screenshot.png)
+
 Interactive options strategy payoff visualizer. Built with Lit, Plotly.js, and Vite.
 
 ## Features
