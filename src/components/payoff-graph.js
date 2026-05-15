@@ -56,10 +56,10 @@ export class PayoffGraph extends LitElement {
     )
 
     const payoffFn = (price, leg) => {
-      const { type, side, strike, premium } = leg
+      const { type, side, strike, premium, quantity = 1 } = leg
       return side === 'long'
-        ? type === 'call' ? longCallPayoff(price, strike, premium) : longPutPayoff(price, strike, premium)
-        : type === 'call' ? shortCallPayoff(price, strike, premium) : shortPutPayoff(price, strike, premium)
+        ? type === 'call' ? longCallPayoff(price, strike, premium, quantity) : longPutPayoff(price, strike, premium, quantity)
+        : type === 'call' ? shortCallPayoff(price, strike, premium, quantity) : shortPutPayoff(price, strike, premium, quantity)
     }
 
     const ys = xs.map(price =>

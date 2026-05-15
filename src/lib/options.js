@@ -1,15 +1,15 @@
-export function longCallPayoff(underlyingPrice, strike, premium) {
-  return Math.max(underlyingPrice - strike, 0) - premium
+export function longCallPayoff(underlyingPrice, strike, premium, quantity = 1) {
+  return (Math.max(underlyingPrice - strike, 0) - premium) * quantity
 }
 
-export function longPutPayoff(underlyingPrice, strike, premium) {
-  return Math.max(strike - underlyingPrice, 0) - premium
+export function longPutPayoff(underlyingPrice, strike, premium, quantity = 1) {
+  return (Math.max(strike - underlyingPrice, 0) - premium) * quantity
 }
 
-export function shortCallPayoff(underlyingPrice, strike, premium) {
-  return -longCallPayoff(underlyingPrice, strike, premium)
+export function shortCallPayoff(underlyingPrice, strike, premium, quantity = 1) {
+  return -longCallPayoff(underlyingPrice, strike, premium, quantity)
 }
 
-export function shortPutPayoff(underlyingPrice, strike, premium) {
-  return -longPutPayoff(underlyingPrice, strike, premium)
+export function shortPutPayoff(underlyingPrice, strike, premium, quantity = 1) {
+  return -longPutPayoff(underlyingPrice, strike, premium, quantity)
 }

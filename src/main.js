@@ -15,7 +15,7 @@ document.querySelector('#app').innerHTML = `
         <chart-controls></chart-controls>
       </div>
     </div>
-    <div class="panel" style="flex:1.25;display:flex;flex-direction:column;min-width:0;min-height:0;">
+    <div class="panel" style="flex:1.5;display:flex;flex-direction:column;min-width:0;min-height:0;">
       <strategy-builder style="display:flex;flex-direction:column;flex:1;min-height:0;"></strategy-builder>
     </div>
   </div>

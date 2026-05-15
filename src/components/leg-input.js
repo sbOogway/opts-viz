@@ -19,6 +19,7 @@ export class LegInput extends LitElement {
     type: { type: String },
     strike: { type: Number },
     premium: { type: Number },
+    quantity: { type: Number },
     step: { type: String },
   }
 
@@ -28,6 +29,7 @@ export class LegInput extends LitElement {
     this.type = 'call'
     this.strike = 0
     this.premium = 0
+    this.quantity = 1
     this.step = '0.00001'
   }
 
@@ -37,7 +39,7 @@ export class LegInput extends LitElement {
 
   emitChange() {
     this.dispatchEvent(new CustomEvent('leg-input-change', {
-      detail: { side: this.side, type: this.type, strike: this.strike, premium: this.premium },
+      detail: { side: this.side, type: this.type, strike: this.strike, premium: this.premium, quantity: this.quantity },
     }))
   }
 
@@ -62,6 +64,7 @@ export class LegInput extends LitElement {
         </div>
         ${labeledInput(this.step, this.strike, 'Strike', e => { this.strike = Number(e.target.value); this.emitChange() })}
         ${labeledInput(this.step, this.premium, 'Premium', e => { this.premium = Number(e.target.value); this.emitChange() })}
+        ${labeledInput('1', this.quantity, 'Qty', e => { this.quantity = Math.max(1, Math.round(Number(e.target.value))); this.emitChange() })}
       </div>
     `
   }

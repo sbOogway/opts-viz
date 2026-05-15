@@ -6,24 +6,24 @@ const inputStyle = 'padding:6px;font-size:14px;border:1px solid #ccc;border-radi
 
 const presetStrats = {
   Butterfly: (u) => [
-    { type: 'call', side: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5 },
-    { type: 'call', side: 'short', strike: +u.toFixed(5), premium: 1.0 },
-    { type: 'call', side: 'short', strike: +u.toFixed(5), premium: 1.0 },
-    { type: 'call', side: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.3 },
+    { type: 'call', side: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5, quantity: 1 },
+    { type: 'call', side: 'short', strike: +u.toFixed(5), premium: 1.0, quantity: 1 },
+    { type: 'call', side: 'short', strike: +u.toFixed(5), premium: 1.0, quantity: 1 },
+    { type: 'call', side: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.3, quantity: 1 },
   ],
   'Iron Condor': (u) => [
-    { type: 'put', side: 'long', strike: +(u * 2 / 3).toFixed(5), premium: 0.03 },
-    { type: 'put', side: 'short', strike: +(u * 5 / 6).toFixed(5), premium: 0.05 },
-    { type: 'call', side: 'short', strike: +(u * 7 / 6).toFixed(5), premium: 0.05 },
-    { type: 'call', side: 'long', strike: +(u * 4 / 3).toFixed(5), premium: 0.03 },
+    { type: 'put', side: 'long', strike: +(u * 2 / 3).toFixed(5), premium: 0.03, quantity: 1 },
+    { type: 'put', side: 'short', strike: +(u * 5 / 6).toFixed(5), premium: 0.05, quantity: 1 },
+    { type: 'call', side: 'short', strike: +(u * 7 / 6).toFixed(5), premium: 0.05, quantity: 1 },
+    { type: 'call', side: 'long', strike: +(u * 4 / 3).toFixed(5), premium: 0.03, quantity: 1 },
   ],
   Straddle: (u) => [
-    { type: 'call', side: 'long', strike: +u.toFixed(5), premium: 1.0 },
-    { type: 'put', side: 'long', strike: +u.toFixed(5), premium: 1.0 },
+    { type: 'call', side: 'long', strike: +u.toFixed(5), premium: 1.0, quantity: 1 },
+    { type: 'put', side: 'long', strike: +u.toFixed(5), premium: 1.0, quantity: 1 },
   ],
   Strangle: (u) => [
-    { type: 'put', side: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5 },
-    { type: 'call', side: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.5 },
+    { type: 'put', side: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5, quantity: 1 },
+    { type: 'call', side: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.5, quantity: 1 },
   ],
 }
 
@@ -80,9 +80,9 @@ export class StrategyBuilder extends LitElement {
 
   addLeg() {
     const el = this.querySelector('#new-leg-input')
-    const { side, type, strike, premium } = el
+    const { side, type, strike, premium, quantity } = el
     if (!strike || !premium) return
-    this.legs = [...this.legs, { type, side, strike, premium }]
+    this.legs = [...this.legs, { type, side, strike, premium, quantity: quantity ?? 1 }]
     this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
     this.syncUrl()
   }
@@ -137,9 +137,9 @@ export class StrategyBuilder extends LitElement {
           </div>
         </div>
 
-        <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
-          <leg-input id="new-leg-input" .side=${'long'} .type=${'call'} .strike=${this.defaultStrike} .premium=${this.defaultPremium} .step=${this.step}></leg-input>
-          <button class="btn-add" @click=${this.addLeg}>Add Leg</button>
+        <div style="display:flex;gap:8px;align-items:end;min-width:0;">
+          <leg-input id="new-leg-input" style="flex:1;min-width:0;" .side=${'long'} .type=${'call'} .strike=${this.defaultStrike} .premium=${this.defaultPremium} .step=${this.step}></leg-input>
+          <button class="btn-add" style="flex-shrink:0;font-size:18px;padding:4px 12px;" @click=${this.addLeg}>+</button>
         </div>
       </div>
 
@@ -152,7 +152,7 @@ export class StrategyBuilder extends LitElement {
                 <div style="height:9px;flex-shrink:0;"></div>
                 <span style="display:flex;align-items:center;justify-content:center;min-width:24px;border:1px solid var(--adecbe);border-radius:4px;font-weight:bold;font-size:14px;flex:1;">${String.fromCharCode(65 + i)}</span>
               </div>
-              <leg-input .side=${leg.side} .type=${leg.type} .strike=${leg.strike} .premium=${leg.premium} .step=${this.step}
+              <leg-input .side=${leg.side} .type=${leg.type} .strike=${leg.strike} .premium=${leg.premium} .quantity=${leg.quantity ?? 1} .step=${this.step}
                 @leg-input-change=${e => this.replaceLeg(i, e.detail)}>
               </leg-input>
               <div style="display:flex;flex-direction:column;">
