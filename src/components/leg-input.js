@@ -15,7 +15,7 @@ const labeledInput = (step, value, label, onInput) => html`
 
 export class LegInput extends LitElement {
   static properties = {
-    direction: { type: String },
+    side: { type: String },
     type: { type: String },
     strike: { type: Number },
     premium: { type: Number },
@@ -24,7 +24,7 @@ export class LegInput extends LitElement {
 
   constructor() {
     super()
-    this.direction = 'long'
+    this.side = 'long'
     this.type = 'call'
     this.strike = 0
     this.premium = 0
@@ -37,7 +37,7 @@ export class LegInput extends LitElement {
 
   emitChange() {
     this.dispatchEvent(new CustomEvent('leg-input-change', {
-      detail: { direction: this.direction, type: this.type, strike: this.strike, premium: this.premium },
+      detail: { side: this.side, type: this.type, strike: this.strike, premium: this.premium },
     }))
   }
 
@@ -46,8 +46,8 @@ export class LegInput extends LitElement {
       <div style="display:flex;gap:3px;align-items:stretch;min-width:0;">
         <div style="display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;">
           <label class="label">Side</label>
-          <select style="${selectStyle(this.direction, 'long')}" .value=${this.direction}
-            @change=${e => { this.direction = e.target.value; this.emitChange() }}>
+          <select style="${selectStyle(this.side, 'long')}" .value=${this.side}
+            @change=${e => { this.side = e.target.value; this.emitChange() }}>
             <option value="long">Long</option>
             <option value="short">Short</option>
           </select>

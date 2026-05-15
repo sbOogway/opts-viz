@@ -1,7 +1,7 @@
-import './style.css'
-import './payoff-graph.js'
-import './strategy-builder.js'
-import './chart-controls.js'
+import './styles/style.css'
+import './components/payoff-graph.js'
+import './components/strategy-builder.js'
+import './components/chart-controls.js'
 
 document.querySelector('#app').innerHTML = `
   <div style="display:flex;gap:16px;padding:16px;width:100%;height:100vh;box-sizing:border-box;overflow:hidden;">

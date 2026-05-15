@@ -1,28 +1,29 @@
 import { LitElement, html } from 'lit'
 import './leg-input.js'
+import { encodeToUrl, decodeFromUrl } from '../lib/leg-parser.js'
 
 const inputStyle = 'padding:6px;font-size:14px;border:1px solid #ccc;border-radius:4px;'
 
 const presetStrats = {
   Butterfly: (u) => [
-    { type: 'call', direction: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5 },
-    { type: 'call', direction: 'short', strike: +u.toFixed(5), premium: 1.0 },
-    { type: 'call', direction: 'short', strike: +u.toFixed(5), premium: 1.0 },
-    { type: 'call', direction: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.3 },
+    { type: 'call', side: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5 },
+    { type: 'call', side: 'short', strike: +u.toFixed(5), premium: 1.0 },
+    { type: 'call', side: 'short', strike: +u.toFixed(5), premium: 1.0 },
+    { type: 'call', side: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.3 },
   ],
   'Iron Condor': (u) => [
-    { type: 'put', direction: 'long', strike: +(u * 2 / 3).toFixed(5), premium: 0.03 },
-    { type: 'put', direction: 'short', strike: +(u * 5 / 6).toFixed(5), premium: 0.05 },
-    { type: 'call', direction: 'short', strike: +(u * 7 / 6).toFixed(5), premium: 0.05 },
-    { type: 'call', direction: 'long', strike: +(u * 4 / 3).toFixed(5), premium: 0.03 },
+    { type: 'put', side: 'long', strike: +(u * 2 / 3).toFixed(5), premium: 0.03 },
+    { type: 'put', side: 'short', strike: +(u * 5 / 6).toFixed(5), premium: 0.05 },
+    { type: 'call', side: 'short', strike: +(u * 7 / 6).toFixed(5), premium: 0.05 },
+    { type: 'call', side: 'long', strike: +(u * 4 / 3).toFixed(5), premium: 0.03 },
   ],
   Straddle: (u) => [
-    { type: 'call', direction: 'long', strike: +u.toFixed(5), premium: 1.0 },
-    { type: 'put', direction: 'long', strike: +u.toFixed(5), premium: 1.0 },
+    { type: 'call', side: 'long', strike: +u.toFixed(5), premium: 1.0 },
+    { type: 'put', side: 'long', strike: +u.toFixed(5), premium: 1.0 },
   ],
   Strangle: (u) => [
-    { type: 'put', direction: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5 },
-    { type: 'call', direction: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.5 },
+    { type: 'put', side: 'long', strike: +(u * 0.95).toFixed(5), premium: 0.5 },
+    { type: 'call', side: 'long', strike: +(u * 1.05).toFixed(5), premium: 0.5 },
   ],
 }
 
@@ -49,8 +50,25 @@ export class StrategyBuilder extends LitElement {
     return this
   }
 
+  syncUrl() {
+    if (!this.legs.length) {
+      history.replaceState(null, '', location.pathname)
+      return
+    }
+    const qs = encodeToUrl(this.legs, this.underlyingPrice)
+    history.replaceState(null, '', '?' + qs)
+  }
+
   firstUpdated() {
-    this.loadStrategy('Iron Condor')
+    const parsed = decodeFromUrl(location.search)
+    if (parsed) {
+      this.underlyingPrice = parsed.underlyingPrice
+      this.legs = parsed.legs
+      this.dispatchEvent(new CustomEvent('underlying-change', { detail: this.underlyingPrice }))
+      this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
+    } else {
+      this.loadStrategy('Iron Condor')
+    }
   }
 
   syncDefaults() {
@@ -60,27 +78,23 @@ export class StrategyBuilder extends LitElement {
 
   addLeg() {
     const el = this.querySelector('#new-leg-input')
-    const { direction, type, strike, premium } = el
+    const { side, type, strike, premium } = el
     if (!strike || !premium) return
-    this.legs = [...this.legs, { type, direction, strike, premium }]
+    this.legs = [...this.legs, { type, side, strike, premium }]
     this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
+    this.syncUrl()
   }
 
   removeLeg(index) {
     this.legs = this.legs.filter((_, i) => i !== index)
     this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
-  }
-
-  updateLeg(index, field, value) {
-    this.legs = this.legs.map((leg, i) =>
-      i === index ? { ...leg, [field]: value } : leg
-    )
-    this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
+    this.syncUrl()
   }
 
   replaceLeg(index, data) {
     this.legs = this.legs.map((leg, i) => i === index ? { ...data } : leg)
     this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
+    this.syncUrl()
   }
 
   loadStrategy(name) {
@@ -88,6 +102,7 @@ export class StrategyBuilder extends LitElement {
     if (!fn) return
     this.legs = fn(this.underlyingPrice)
     this.dispatchEvent(new CustomEvent('legs-change', { detail: this.legs }))
+    this.syncUrl()
   }
 
   render() {
@@ -103,7 +118,7 @@ export class StrategyBuilder extends LitElement {
           <div style="display:flex;flex-direction:column;gap:1px;">
             <label class="label">Underlying Price</label>
             <input id="underlying-price" type="number" step=${this.step} .value=${this.underlyingPrice}
-              @input=${e => { this.underlyingPrice = Number(e.target.value); this.syncDefaults(); this.dispatchEvent(new CustomEvent('underlying-change', { detail: this.underlyingPrice })) }}
+              @input=${e => { this.underlyingPrice = Number(e.target.value); this.syncDefaults(); this.dispatchEvent(new CustomEvent('underlying-change', { detail: this.underlyingPrice })); this.syncUrl() }}
               style="padding:6px;font-size:14px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;width:100px;">
           </div>
           <div style="display:flex;flex-direction:column;gap:1px;">
@@ -115,7 +130,7 @@ export class StrategyBuilder extends LitElement {
         </div>
 
         <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
-          <leg-input id="new-leg-input" .direction=${'long'} .type=${'call'} .strike=${this.defaultStrike} .premium=${this.defaultPremium} .step=${this.step}></leg-input>
+          <leg-input id="new-leg-input" .side=${'long'} .type=${'call'} .strike=${this.defaultStrike} .premium=${this.defaultPremium} .step=${this.step}></leg-input>
           <button class="btn-add" @click=${this.addLeg}>Add Leg</button>
         </div>
       </div>
@@ -129,7 +144,7 @@ export class StrategyBuilder extends LitElement {
                 <div style="height:9px;flex-shrink:0;"></div>
                 <span style="display:flex;align-items:center;justify-content:center;min-width:24px;border:1px solid var(--adecbe);border-radius:4px;font-weight:bold;font-size:14px;flex:1;">${String.fromCharCode(65 + i)}</span>
               </div>
-              <leg-input .direction=${leg.direction} .type=${leg.type} .strike=${leg.strike} .premium=${leg.premium} .step=${this.step}
+              <leg-input .side=${leg.side} .type=${leg.type} .strike=${leg.strike} .premium=${leg.premium} .step=${this.step}
                 @leg-input-change=${e => this.replaceLeg(i, e.detail)}>
               </leg-input>
               <div style="display:flex;flex-direction:column;">

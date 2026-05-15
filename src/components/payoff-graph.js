@@ -1,7 +1,7 @@
 import { LitElement, html } from 'lit'
 import Plotly from 'plotly.js-dist-min'
-import { longCallPayoff, longPutPayoff, shortCallPayoff, shortPutPayoff } from './options.js'
-import './payoff-graph.css'
+import { longCallPayoff, longPutPayoff, shortCallPayoff, shortPutPayoff } from '../lib/options.js'
+import '../styles/payoff-graph.css'
 
 export class PayoffGraph extends LitElement {
   static properties = {
@@ -51,8 +51,8 @@ export class PayoffGraph extends LitElement {
     )
 
     const payoffFn = (price, leg) => {
-      const { type, direction, strike, premium } = leg
-      return direction === 'long'
+      const { type, side, strike, premium } = leg
+      return side === 'long'
         ? type === 'call' ? longCallPayoff(price, strike, premium) : longPutPayoff(price, strike, premium)
         : type === 'call' ? shortCallPayoff(price, strike, premium) : shortPutPayoff(price, strike, premium)
     }
