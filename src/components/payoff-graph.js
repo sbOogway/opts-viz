@@ -36,10 +36,22 @@ export class PayoffGraph extends LitElement {
     this.fontColor = style.color
     this.lineColor = style.getPropertyValue('--chart-accent').trim()
     this.gridColor = 'rgba(128,128,128,0.25)'
+    this._autoRange = true
+    this._savedRange = null
+    const el = this.querySelector('div')
+    el.addEventListener('plotly_relayout', e => {
+      if (e && e['xaxis.range[0]'] !== undefined) {
+        this._savedRange = {
+          x: [e['xaxis.range[0]'], e['xaxis.range[1]']],
+          y: [e['yaxis.range[0]'], e['yaxis.range[1]']],
+        }
+      }
+    })
     if (this.legs.length) this.updateChart()
   }
 
   updated(changedProperties) {
+    if (changedProperties.has('underlyingPrice')) this._autoRange = true
     if (changedProperties.has('legs') || changedProperties.has('underlyingPrice') || changedProperties.has('lineWidth')) {
       this.updateChart()
     }
@@ -50,7 +62,7 @@ export class PayoffGraph extends LitElement {
 
     const xMin = 0
     const xMax = this.underlyingPrice * 10
-    const numPoints = 200
+    const numPoints = 1000
     const xs = Array.from({ length: numPoints }, (_, i) =>
       xMin + (xMax - xMin) * i / (numPoints - 1)
     )
@@ -149,10 +161,20 @@ export class PayoffGraph extends LitElement {
 
     const el = this.querySelector('div')
     el.style.overflow = 'hidden'
+
+    const xaxis = { title: axisTitle('Underlying Price'), gridcolor: this.gridColor, zerolinecolor: this.lineColor, zerolinewidth: 2, autorange: false }
+    const yaxis = { title: axisTitle('Profit'), gridcolor: this.gridColor, zerolinecolor: this.lineColor, zerolinewidth: 2, autorange: false }
+    if (this._autoRange) {
+      xaxis.range = [0, this.underlyingPrice * 3]
+      yaxis.range = [-maxAbsY * 1.15, maxAbsY * 1.15]
+    } else if (this._savedRange) {
+      xaxis.range = this._savedRange.x
+      yaxis.range = this._savedRange.y
+    }
+
     Plotly.react(el, data, {
       autosize: true,
-      xaxis: { title: axisTitle('Underlying Price'), range: [0, this.underlyingPrice * 3], gridcolor: this.gridColor, zerolinecolor: this.lineColor, zerolinewidth: 2 },
-      yaxis: { title: axisTitle('Profit'), range: [-maxAbsY * 1.15, maxAbsY * 1.15], gridcolor: this.gridColor, zerolinecolor: this.lineColor, zerolinewidth: 2 },
+      xaxis, yaxis,
       showlegend: true,
       margin: { t: 60, r: 20, b: 60, l: 70 },
       paper_bgcolor: 'transparent',
@@ -174,7 +196,15 @@ export class PayoffGraph extends LitElement {
           line: { color: this.lineColor, width: 1, dash: 'dot' },
         })),
       ],
-    }, { scrollZoom: true, responsive: true })
+    }, { scrollZoom: true, responsive: true }).then(gd => {
+      if (this._autoRange) {
+        this._savedRange = {
+          x: gd.layout.xaxis.range,
+          y: gd.layout.yaxis.range,
+        }
+        this._autoRange = false
+      }
+    })
   }
 
   render() {
