@@ -1,0 +1,21 @@
+{
+  "hash": "bf327854",
+  "configHash": "77237d59",
+  "lockfileHash": "4aa7daf3",
+  "browserHash": "5d895dcb",
+  "optimized": {
+    "lit": {
+      "src": "../../node_modules/lit/index.js",
+      "file": "lit.js",
+      "fileHash": "ae3936a7",
+      "needsInterop": false
+    },
+    "plotly.js-dist-min": {
+      "src": "../../node_modules/plotly.js-dist-min/plotly.min.js",
+      "file": "plotly__js-dist-min.js",
+      "fileHash": "e46e2db4",
+      "needsInterop": true
+    }
+  },
+  "chunks": {}
+}

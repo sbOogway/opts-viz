@@ -1,13 +1,13 @@
 {
   "name": "opts-viz",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "gh-pages -d dist"
+    "deploy": "vite build && gh-pages -d dist --dotfiles"
   },
   "devDependencies": {
     "gh-pages": "^6.3.0",
