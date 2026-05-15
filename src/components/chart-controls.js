@@ -7,8 +7,13 @@ export class ChartControls extends LitElement {
 
   render() {
     return html`
-      <div style="font-size:12px;color:#000;">
+      <div style="display: flex; align-items: baseline;">
+        <div class="label" style="font-size:12px;">
         Interactive options strategy visualizer. Zoom: scroll wheel &middot; Move around: Shift + click drag 
+        </div>
+        <div style="margin-left: auto">
+          <a class="label" href="https://sboogway.github.io/opts-viz/">source code</a>
+        </div>
       </div>
     `
   }
