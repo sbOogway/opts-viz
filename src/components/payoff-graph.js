@@ -11,16 +11,18 @@ export class PayoffGraph extends LitElement {
     legs: { type: Array },
     underlyingPrice: { type: Number, attribute: 'underlying-price' },
     lineWidth: { type: Number, attribute: 'line-width' },
+    decimals: { type: Number },
   }
 
   constructor() {
     super()
     this.width = '100%'
     this.height = '100%'
-    this.fontColor = 'black'
+    this.fontColor = 'inherit'
     this.legs = []
     this.underlyingPrice = 1
     this.lineWidth = 1.5
+    this.decimals = 5
   }
 
   createRenderRoot() {
@@ -31,6 +33,9 @@ export class PayoffGraph extends LitElement {
     const style = getComputedStyle(this)
     this.posColor = style.getPropertyValue('--positive-color').trim()
     this.negColor = style.getPropertyValue('--negative-color').trim()
+    this.fontColor = style.color
+    this.lineColor = style.getPropertyValue('--chart-accent').trim()
+    this.gridColor = 'rgba(128,128,128,0.25)'
     if (this.legs.length) this.updateChart()
   }
 
@@ -44,7 +49,7 @@ export class PayoffGraph extends LitElement {
     if (!this.legs.length) return
 
     const xMin = 0
-    const xMax = this.underlyingPrice * 3
+    const xMax = this.underlyingPrice * 10
     const numPoints = 200
     const xs = Array.from({ length: numPoints }, (_, i) =>
       xMin + (xMax - xMin) * i / (numPoints - 1)
@@ -97,6 +102,7 @@ export class PayoffGraph extends LitElement {
         x: seg.x, y: seg.y,
         line: { color: seg.sign === 1 ? this.posColor : this.negColor, width: this.lineWidth },
         marker: { color: seg.sign === 1 ? this.posColor : this.negColor, size: 3 },
+        hovertemplate: `Underlying: %{x:.${this.decimals}f}<br>Profit: %{y:.${this.decimals}f}<extra></extra>`,
       })
     })
 
@@ -106,8 +112,8 @@ export class PayoffGraph extends LitElement {
       y: [payoffAtPrice],
       type: 'scatter',
       mode: 'markers',
-      marker: { color: '#666', size: 8 },
-      hovertemplate: `Underlying: ${this.underlyingPrice}<br>Profit: %{y}<extra></extra>`,
+      marker: { color: this.lineColor, size: 8, opacity: 0.6 },
+      hovertemplate: `Underlying: ${this.underlyingPrice.toFixed(this.decimals)}<br>Profit: %{y:.${this.decimals}f}<extra></extra>`,
     })
 
     breakevens.forEach(x => {
@@ -116,23 +122,26 @@ export class PayoffGraph extends LitElement {
         y: [0],
         type: 'scatter',
         mode: 'markers',
-        name: `Breakeven: ${x}`,
-        marker: { color: '#000', size: 6 },
-        hovertemplate: `Breakeven: ${x}<extra></extra>`,
+        name: `Breakeven: ${x.toFixed(this.decimals)}`,
+        marker: { color: this.lineColor, size: 6 },
+        hovertemplate: `Breakeven: ${x.toFixed(this.decimals)}<extra></extra>`,
       })
     })
 
-    data.push({
-      x: this.legs.map(l => l.strike),
-      y: this.legs.map(() => 0),
-      text: this.legs.map((_, i) => String.fromCharCode(65 + i)),
-      textposition: 'top center',
-      type: 'scatter',
-      mode: 'markers+text',
-      name: 'Strikes',
-      marker: { color: '#000', size: 7, symbol: 'diamond' },
-      textfont: { size: 16, color: '#000' },
-      showlegend: false,
+    this.legs.forEach((leg, i) => {
+      const letter = String.fromCharCode(65 + i)
+      data.push({
+        x: [leg.strike],
+        y: [0],
+        text: letter,
+        textposition: 'top center',
+        type: 'scatter',
+        mode: 'markers+text',
+        name: `${letter}: ${leg.strike.toFixed(this.decimals)}`,
+        marker: { color: this.lineColor, size: 9, symbol: 'diamond' },
+        textfont: { size: 14, color: this.lineColor },
+        showlegend: true,
+      })
     })
 
     const axisTitle = text => ({ text, standoff: 10 })
@@ -142,8 +151,8 @@ export class PayoffGraph extends LitElement {
     el.style.overflow = 'hidden'
     Plotly.react(el, data, {
       autosize: true,
-      xaxis: { title: axisTitle('Underlying Price'), range: [0, this.underlyingPrice * 3] },
-      yaxis: { title: axisTitle('Profit'), range: [-maxAbsY * 1.15, maxAbsY * 1.15] },
+      xaxis: { title: axisTitle('Underlying Price'), range: [0, this.underlyingPrice * 3], gridcolor: this.gridColor, zerolinecolor: this.lineColor, zerolinewidth: 2 },
+      yaxis: { title: axisTitle('Profit'), range: [-maxAbsY * 1.15, maxAbsY * 1.15], gridcolor: this.gridColor, zerolinecolor: this.lineColor, zerolinewidth: 2 },
       showlegend: true,
       margin: { t: 60, r: 20, b: 60, l: 70 },
       paper_bgcolor: 'transparent',
@@ -157,12 +166,12 @@ export class PayoffGraph extends LitElement {
           y0: 0,
           y1: 1,
           yref: 'paper',
-          line: { color: '#666', width: 1, dash: 'dash' },
+          line: { color: this.lineColor, width: 1, dash: 'dash', opacity: 0.5 },
         },
         ...breakevens.map(x => ({
           type: 'line',
           x0: x, x1: x, y0: 0, y1: 1, yref: 'paper',
-          line: { color: '#000', width: 1, dash: 'dot' },
+          line: { color: this.lineColor, width: 1, dash: 'dot' },
         })),
       ],
     }, { scrollZoom: true, responsive: true })

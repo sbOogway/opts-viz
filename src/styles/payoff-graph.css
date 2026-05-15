@@ -3,4 +3,11 @@ payoff-graph {
   position: relative;
   --positive-color: #00ff00;
   --negative-color: #ff0000;
+  --chart-accent: #000;
+}
+
+@media (prefers-color-scheme: dark) {
+  payoff-graph {
+    --chart-accent: #f3f4f6;
+  }
 }

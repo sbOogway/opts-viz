@@ -34,12 +34,14 @@ export class StrategyBuilder extends LitElement {
     defaultStrike: { type: Number, attribute: 'default-strike' },
     defaultPremium: { type: Number, attribute: 'default-premium' },
     step: { type: String },
+    decimals: { type: Number },
   }
 
   constructor() {
     super()
     this.legs = []
     this.step = '0.001'
+    this.decimals = 5
     const defaultPrice = 1.5
     this.underlyingPrice = defaultPrice
     this.defaultStrike = defaultPrice
@@ -126,6 +128,12 @@ export class StrategyBuilder extends LitElement {
             <input id="step-size" type="number" step="0.001" .value=${this.step}
               @input=${e => { this.step = String(Number(e.target.value)); }}
               style="padding:6px;font-size:14px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;width:80px;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <label class="label">Decimals</label>
+            <input id="decimals" type="number" step="1" min="0" max="15" .value=${this.decimals}
+              @input=${e => { this.decimals = Number(e.target.value); this.dispatchEvent(new CustomEvent('decimals-change', { detail: this.decimals })) }}
+              style="padding:6px;font-size:14px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;width:70px;">
           </div>
         </div>
 
